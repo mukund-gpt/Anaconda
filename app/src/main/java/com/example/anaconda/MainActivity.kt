@@ -17,7 +17,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             AnacondaTheme {
+                
                 SnakeGameScreen()
+
+                //gpg setup
 
 
             }
