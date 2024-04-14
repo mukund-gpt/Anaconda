@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
                 SnakeGameScreen()
 
                 //gpg setup
+                //final
 
 
             }
