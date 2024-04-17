@@ -1,7 +1,11 @@
 package com.example.anaconda
 
+import android.media.MediaPlayer
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,13 +19,18 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.currentRecomposeScope
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -33,7 +42,8 @@ import com.example.anaconda.ui.theme.RoyalBlue
 
 @Composable
 fun SnakeGameScreen(
-    state:snakeGameState
+    state:snakeGameState,
+    onGameEvent:(snakeGameEvent)->Unit
 ) {
     val foodImageBitmap= ImageBitmap.imageResource(id = R.drawable.img_apple)
     val snakeHeadImageBitmap=when(state.direction){
@@ -42,73 +52,124 @@ fun SnakeGameScreen(
         Direction.LEFT -> ImageBitmap.imageResource(id = R.drawable.img_snake_head2)
         Direction.RIGHT -> ImageBitmap.imageResource(id = R.drawable.img_snake_head)
     }
+    val context= LocalContext.current
+    val foodSound= remember { MediaPlayer.create(context, R.raw.food) }
+    val gameOverSound= remember { MediaPlayer.create(context, R.raw.gameover) }
+    LaunchedEffect(key1 = state.snake.size) {
+        if(state.snake.size!=1){
+            foodSound?.start()
+        }
+    }
+    LaunchedEffect(key1 = state.isGameOver) {
+        if(state.isGameOver){
+            gameOverSound?.start()
+        }
+    }
+
+    Box (
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ){
 
         Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceAround
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceAround
 
-    ) {
-        Card(
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
         ) {
+            Card(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    modifier = Modifier.padding(16.dp),
+                    text="Score: ${state.snake.size-1}",
+                    style=MaterialTheme.typography.headlineMedium
+
+                )
+            }
+
+            Canvas(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(2 / 3f)
+                    .pointerInput(state.gameState) {
+                        if (state.gameState != GameState.STARTED) {
+                            return@pointerInput
+                        }
+
+                        detectTapGestures { offset ->
+                            onGameEvent(snakeGameEvent.UpdateDirection(offset, size.width))
+
+                        }
+                    }
+            ) {
+                val cellSize=size.width/20
+                drawGameBoard(
+                    cellSize=cellSize,
+                    cellColor = Custard,
+                    borderCellColor = RoyalBlue,
+                    gridWidth = state.xAxisGridSize,
+                    gridHeight = state.yAxisGridSize,
+
+                    )
+                drawFood(
+                    foodImage = foodImageBitmap,
+                    cellSize=cellSize.toInt(),
+                    coordinate = state.food
+                )
+                drawSnake(
+                    snakeHeadImage = snakeHeadImageBitmap,
+                    cellSize=cellSize,
+                    snake = state.snake
+                )
+
+            }
+            Row (
+                modifier = Modifier
+                    .padding(8.dp)
+                    .fillMaxWidth()
+            ){
+
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = { onGameEvent(snakeGameEvent.ResetGame) },
+                    enabled=state.gameState==GameState.PAUSED || state.isGameOver
+                ) {
+                    Text(text = if(state.isGameOver)"RESET" else "NEW GAME")
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = {
+                        when(state.gameState){
+                            GameState.IDLE,GameState.STARTED -> onGameEvent(snakeGameEvent.ResetGame)
+                            GameState.PAUSED -> onGameEvent(snakeGameEvent.PauseGame)
+
+                        }
+                    },
+                    enabled = !state.isGameOver
+                ) {
+                    Text(text = when(state.gameState){
+                        GameState.IDLE ->"START"
+                        GameState.STARTED ->"PAUSED"
+                        GameState.PAUSED -> "RESUME"
+                    })
+                }
+            }
+        }
+        AnimatedVisibility(visible = state.isGameOver) {
             Text(
                 modifier = Modifier.padding(16.dp),
-                text="Score: ${state.snake.size-1}",
+                text="GAME OVER",
                 style=MaterialTheme.typography.headlineMedium
 
             )
         }
-
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(2 / 3f)
-        ) {
-            val cellSize=size.width/20
-            drawGameBoard(
-                cellSize=cellSize,
-                cellColor = Custard,
-                borderCellColor = RoyalBlue,
-                gridWidth = state.xAxisGridSize,
-                gridHeight = state.yAxisGridSize,
-
-            )
-            drawFood(
-                foodImage = foodImageBitmap,
-                cellSize=cellSize.toInt(),
-                coordinate = state.food
-            )
-            drawSnake(
-                snakeHeadImage = snakeHeadImageBitmap,
-                cellSize=cellSize,
-                snake = state.snake
-            )
-
-        }
-        Row (
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth()
-        ){
-
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = { /*TODO*/ }
-            ) {
-                Text(text = "REPLAY")
-            }
-            Spacer(modifier = Modifier.width(10.dp))
-            Button(
-                modifier = Modifier.weight(1f),
-                onClick = { /*TODO*/ }
-            ) {
-                Text(text = "START")
-            }
-        }
     }
-    
+
+
+
 }
 
 private fun DrawScope.drawGameBoard(
@@ -176,7 +237,7 @@ private fun DrawScope.drawSnake(
                 radius = radius
             )
         }
-        
+
     }
 
 }
