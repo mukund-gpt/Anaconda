@@ -15,26 +15,26 @@ class snakeGameViewModel<Offset> :ViewModel() {
 
     fun onEvent(event: snakeGameEvent){
         when(event){
-            snakeGameEvent.PauseGame -> {
+            snakeGameEvent.StartGame -> {
                 _state.update { it.copy(gameState=GameState.STARTED) }
                 viewModelScope.launch {
 
                     while (state.value.gameState==GameState.STARTED){
                         val delayMillis=when(state.value.snake.size){
-                            in 1..5->500L
-                            in 6..10->450L
-                            else->300L
+                            in 1..5->200L
+                            in 6..10->150L
+                            else->100L
                         }
-                        delay(100)
+                        delay(delayMillis)
                         _state.value=updateGame(state.value)
                     }
                 }
             }
-            snakeGameEvent.ResetGame ->{
+            snakeGameEvent.PauseGame ->{
                 _state.update { it.copy(gameState=GameState.PAUSED) }
             }
 
-            snakeGameEvent.StartGame -> {
+            snakeGameEvent.ResetGame -> {
                 _state.value= snakeGameState()
             }
             is snakeGameEvent.UpdateDirection -> {

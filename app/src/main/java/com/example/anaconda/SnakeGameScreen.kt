@@ -143,8 +143,8 @@ fun SnakeGameScreen(
                     modifier = Modifier.weight(1f),
                     onClick = {
                         when(state.gameState){
-                            GameState.IDLE,GameState.STARTED -> onGameEvent(snakeGameEvent.ResetGame)
-                            GameState.PAUSED -> onGameEvent(snakeGameEvent.PauseGame)
+                            GameState.IDLE,GameState.PAUSED -> onGameEvent(snakeGameEvent.StartGame)
+                            GameState.STARTED -> onGameEvent(snakeGameEvent.PauseGame)
 
                         }
                     },
