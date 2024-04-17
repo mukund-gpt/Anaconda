@@ -18,11 +18,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             AnacondaTheme {
                 
-                SnakeGameScreen()
+                SnakeGameScreen(
+                    state=snakeGameState()
+                )
 
-                //gpg setup
-                //final
-                //final
 
 
             }
